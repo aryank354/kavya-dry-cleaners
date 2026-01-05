@@ -1,0 +1,12 @@
+# ======================
+# File 1: public/robots.txt
+# ======================
+# Allow all search engines to crawl your site
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://kavyadrycleaners.shop/sitemap.xml
+
+# Crawl-delay (optional, helps prevent server overload)
+Crawl-delay: 1
