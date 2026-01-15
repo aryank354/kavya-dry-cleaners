@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Phone, MessageCircle, Sparkles, MapPin, Search, Star, Award, ArrowRight, ArrowUpRight, ExternalLink, Shield } from 'lucide-react';
 import axios from 'axios';
-import './index.css'  // <--- THIS LINE IS CRITICAL
+
+// --- API URL CONFIGURATION ---
+// This automatically switches between Localhost (for coding) and Render (for deployment)
+const API_URL = import.meta.env.PROD 
+  ? "https://kavya-dry-cleaners.onrender.com/api/services" // Your LIVE Render URL
+  : "http://localhost:5000/api/services";                  // Your Local URL
 
 const categories = ['All', 'Men', 'Women', 'Household', 'Winter', 'Others'];
 
@@ -19,12 +24,12 @@ function App() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch data from Node Backend
+  // Fetch data from Backend
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        // Ensure your backend is running on port 5000
-        const response = await axios.get('http://localhost:5000/api/services');
+        console.log("Fetching data from:", API_URL);
+        const response = await axios.get(API_URL);
         setServices(response.data);
         setLoading(false);
       } catch (error) {
@@ -56,7 +61,6 @@ function App() {
       }`}>
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center">
-            {/* Logo Area */}
             <div className="flex items-center gap-3">
               <div className="relative">
                 <svg viewBox="0 0 100 100" className="w-12 h-12" fill="none">
@@ -76,7 +80,6 @@ function App() {
               </div>
             </div>
             
-            {/* Nav Buttons */}
             <div className="flex gap-2">
               <a href="tel:9899320667" className="bg-blue-100 text-blue-700 p-2.5 rounded-full hover:bg-blue-200 transition-colors">
                 <Phone className="w-5 h-5" />
@@ -194,6 +197,7 @@ function App() {
         {/* Loading State or Grid */}
         {loading ? (
            <div className="text-center py-12">
+             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
              <p className="text-slate-500">Loading rates...</p>
            </div>
         ) : (
