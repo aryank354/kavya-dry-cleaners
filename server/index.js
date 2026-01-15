@@ -1,28 +1,27 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const port = 5000;
 
-// Middleware
-app.use(cors()); // Allow frontend to talk to backend
+// --- CONFIGURATION ---
+app.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
 app.use(express.json());
 
-// Data (Moved from your Next.js page.js)
+// --- DATA ---
 const services = [
-  // --- MEN ---
+  // MEN
   { name: "Shirt", price: "80", category: "Men", popular: true },
   { name: "Pant / Trousers", price: "80", category: "Men" },
   { name: "T-Shirt", price: "80", category: "Men" },
   { name: "Jeans", price: "80", category: "Men", popular: true },
-  { name: "Suit (2 Pc)", price: "350", category: "Men" },
-  { name: "Suit (3 Pc)", price: "400", category: "Men" },
+  { name: "Gent Suit (2 Pc)", price: "350", category: "Men" },
+  { name: "Gent Suit (3 Pc)", price: "400", category: "Men" },
   { name: "Sherwani (1 Pc)", price: "200", category: "Men" },
   { name: "Sherwani (2 Pc)", price: "280", category: "Men" },
   { name: "Sherwani (3 Pc)", price: "360", category: "Men" },
   { name: "Kurta Pajama", price: "160", category: "Men" },
   { name: "Nehru Jacket", price: "130", category: "Men" },
 
-  // --- WOMEN ---
+  // WOMEN
   { name: "Ladies Suit (2 Pc)", price: "160", category: "Women", popular: true },
   { name: "Ladies Suit (3 Pc)", price: "240", category: "Women" },
   { name: "Ladies Suit Heavy (3 Pc)", price: "300", category: "Women" },
@@ -37,7 +36,7 @@ const services = [
   { name: "Anarkali (Single)", price: "200", category: "Women" },
   { name: "Anarkali (3 Pc)", price: "350", category: "Women" },
 
-  // --- WINTER ---
+  // WINTER
   { name: "Sweater", price: "130", category: "Winter" },
   { name: "Hoodie", price: "150", category: "Winter" },
   { name: "Coat", price: "200", category: "Winter" },
@@ -48,7 +47,7 @@ const services = [
   { name: "Pashmina Shawl", price: "250", category: "Winter" },
   { name: "Loi", price: "200", category: "Winter" },
 
-  // --- HOUSEHOLD ---
+  // HOUSEHOLD
   { name: "Bedsheet Single (with Pillow)", price: "150", category: "Household" },
   { name: "Bedsheet Double (with Pillow)", price: "250", category: "Household" },
   { name: "Woollen Bedsheet (3 Pc)", price: "350", category: "Household" },
@@ -63,24 +62,39 @@ const services = [
   { name: "Sofa Cleaning", price: "300 /seat", category: "Household" },
   { name: "Carpet", price: "By Size", category: "Household" },
 
-  // --- OTHERS / PRESSING ---
+  // OTHERS
   { name: "Steam Press (Curtain)", price: "80 /panel", category: "Others" },
-  { name: "Charak (Saree)", price: "60", category: "Others" },
-  { name: "Charak (Shirt)", price: "40", category: "Others" },
-  { name: "Charak (Pant)", price: "40", category: "Others" },
+  // { name: "Charak (Saree)", price: "60", category: "Others" },
+  // { name: "Charak (Shirt)", price: "40", category: "Others" },
+  // { name: "Charak (Pant)", price: "40", category: "Others" },
   { name: "Shoes", price: "250", category: "Others" },
 ];
 
-// API Routes
+// --- ROUTES ---
+
 app.get('/', (req, res) => {
   res.send('Kavya Dry Cleaners API is running');
 });
 
+// 1. Get All Services
 app.get('/api/services', (req, res) => {
   res.json(services);
 });
 
-// Start Server
+// 2. Secure Login Route (New!)
+app.post('/api/login', (req, res) => {
+  const { password } = req.body;
+  const SECRET = "ak12345"; // Your Admin Password
+
+  if (password === SECRET) {
+    res.json({ success: true, message: "Login Successful" });
+  } else {
+    res.status(401).json({ success: false, message: "Invalid Password" });
+  }
+});
+
+// --- START SERVER ---
+const port = process.env.PORT || 5000;
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });

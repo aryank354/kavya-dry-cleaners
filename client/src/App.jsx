@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Phone, MessageCircle, Sparkles, MapPin, Search, Star, Award, ArrowRight, ArrowUpRight, ExternalLink, Shield, Camera, X } from 'lucide-react';
+import { Phone, MessageCircle, Sparkles, MapPin, Search, Star, Award, ArrowRight, ArrowUpRight, ExternalLink, Shield, Camera, X, Lock } from 'lucide-react';
 import axios from 'axios';
+import AdminPanel from './AdminPanel';
 
-// --- 1. API CONNECTION ---
-const API_URL = import.meta.env.PROD 
-  ? "https://kavya-dry-cleaners.onrender.com/api/services" 
-  : "http://localhost:5000/api/services";
+// --- API URL ---
+const BASE_URL = import.meta.env.PROD 
+  ? "https://kavya-dry-cleaners.onrender.com" 
+  : "http://localhost:5000";
 
 const categories = ['All', 'Men', 'Women', 'Household', 'Winter', 'Others'];
 
@@ -16,11 +17,8 @@ const features = [
   { icon: Award, title: "Expert Team", desc: "20+ years experience" }
 ];
 
-// --- 2. SHOP PHOTOS ---
 const galleryImages = [
   { src: "/shop1.jpg", alt: "Kavya Dry Cleaners Main Shop" },
-  // Uncomment to add more later:
-  // { src: "/shop2.jpg", alt: "Ironing Area" },
 ];
 
 function App() {
@@ -29,15 +27,24 @@ function App() {
   const [scrolled, setScrolled] = useState(false);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // New State for the Full Screen Image View
   const [selectedImage, setSelectedImage] = useState(null);
 
-  // Fetch Data
+  // --- ADMIN STATE ---
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // 1. Check if already logged in (Persistent Login)
+  useEffect(() => {
+    const loggedIn = localStorage.getItem("kavya_admin_logged_in");
+    if (loggedIn === "true") {
+      setIsAdmin(true);
+    }
+  }, []);
+
+  // 2. Fetch Data
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await axios.get(API_URL);
+        const response = await axios.get(`${BASE_URL}/api/services`);
         setServices(response.data);
         setLoading(false);
       } catch (error) {
@@ -48,24 +55,50 @@ function App() {
     fetchServices();
   }, []);
 
-  // Handle Scroll
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Filter Logic
   const filteredServices = services.filter(item => {
     const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
+  // --- LOGIN LOGIC ---
+  const handleAdminLogin = async () => {
+    const password = prompt("Enter Admin Password:");
+    if (!password) return;
+
+    try {
+      const response = await axios.post(`${BASE_URL}/api/login`, { password });
+      if (response.data.success) {
+        setIsAdmin(true);
+        localStorage.setItem("kavya_admin_logged_in", "true");
+        alert("Welcome Back!");
+      }
+    } catch (error) {
+      alert("Wrong Password!");
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAdmin(false);
+    localStorage.removeItem("kavya_admin_logged_in");
+  };
+
+  // --- IF ADMIN, SHOW PANEL ---
+  if (isAdmin) {
+    return <AdminPanel onLogout={handleLogout} apiUrl={`${BASE_URL}/api/services`} />;
+  }
+
+  // --- NORMAL WEBSITE ---
   return (
     <div className="min-h-screen pb-20 font-sans">
       
-      {/* --- Navigation --- */}
+      {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled ? 'bg-white/95 backdrop-blur-md shadow-md py-2' : 'bg-white/50 backdrop-blur-sm py-4'
       }`}>
@@ -102,7 +135,7 @@ function App() {
         </div>
       </nav>
 
-      {/* --- Hero Section --- */}
+      {/* Hero Section */}
       <div className="pt-32 pb-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-xs font-bold mb-6 tracking-wide uppercase">
@@ -146,15 +179,13 @@ function App() {
         </div>
       </div>
 
-      {/* --- SHOP GALLERY SECTION (FIXED: Full Vertical Photo) --- */}
+      {/* Gallery */}
       {galleryImages.length > 0 && (
         <div className="max-w-6xl mx-auto px-4 mb-16">
           <div className="flex items-center gap-2 mb-6">
              <Camera className="w-6 h-6 text-blue-600" />
              <h3 className="text-2xl font-bold text-slate-900">Our Facility</h3>
           </div>
-          
-          {/* Container Logic: If 1 photo, use Flex to center. If more, use Grid. */}
           <div className={`
             ${galleryImages.length === 1 ? 'flex justify-center' : ''}
             ${galleryImages.length === 2 ? 'grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto' : ''}
@@ -166,14 +197,12 @@ function App() {
                 onClick={() => setSelectedImage(img.src)}
                 className={`
                   group relative rounded-2xl overflow-hidden shadow-lg border-4 border-white bg-white cursor-pointer hover:shadow-xl transition-all duration-300
-                  /* LOGIC FOR 1 PHOTO: Limit width to phone size (md), allow natural height (h-auto) */
                   ${galleryImages.length === 1 ? 'w-full max-w-sm md:max-w-md h-auto' : 'w-full h-64'} 
                 `}
               >
                 <img 
                   src={img.src} 
                   alt={img.alt} 
-                  /* LOGIC: 'object-contain' ensures NOTHING is cropped if single photo */
                   className={`w-full h-full transition-transform duration-500 group-hover:scale-105
                     ${galleryImages.length === 1 ? 'object-contain' : 'object-cover'}
                   `}
@@ -182,8 +211,6 @@ function App() {
                       e.target.parentNode.style.display = 'none';
                   }}
                 />
-                
-                {/* Only show text overlay on grid view (multiple photos), hide on single view to keep it clean */}
                 {galleryImages.length > 1 && (
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                     <div className="flex justify-between items-center w-full">
@@ -198,7 +225,7 @@ function App() {
         </div>
       )}
 
-      {/* --- Address Section --- */}
+      {/* Address */}
       <div className="max-w-4xl mx-auto px-4 mb-16">
         <div onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=D-313+Tagore+Garden+Extn+New+Delhi+110027', '_blank')}
           className="bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 cursor-pointer hover:border-blue-200 transition-all group">
@@ -219,7 +246,7 @@ function App() {
         </div>
       </div>
 
-      {/* --- Services & Pricing --- */}
+      {/* Rate List */}
       <div className="max-w-5xl mx-auto px-4 pb-12">
         <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
           <div>
@@ -288,45 +315,39 @@ function App() {
             )}
           </div>
         )}
-        
-        <p className="text-center text-xs text-slate-400 mt-6 italic">
-          * Prices may vary slightly based on fabric condition and type.
-        </p>
       </div>
 
-      {/* --- Footer --- */}
+      {/* Footer */}
       <footer className="bg-slate-900 text-slate-400 py-8 mt-12 mb-16">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
           <p>© {new Date().getFullYear()} Kavya Dry Cleaners. All rights reserved.</p>
           <div className="flex items-center gap-2">
             <span>Website by</span>
-            <a 
-              href="https://www.aryankanojia.live/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-white font-semibold hover:text-blue-400 flex items-center gap-1 transition-colors"
-            >
-              Aryan Kanojia <ExternalLink className="w-3 h-3" />
+            <a href="https://www.aryankanojia.live/" target="_blank" rel="noopener noreferrer" className="text-white font-semibold hover:text-blue-400">
+              Aryan Kanojia
             </a>
+            <button 
+              onClick={handleAdminLogin}
+              className="ml-4 opacity-50 hover:opacity-100 flex items-center gap-1 text-xs text-slate-600 hover:text-white transition-all"
+            >
+              <Lock size={12} /> Admin
+            </button>
           </div>
         </div>
       </footer>
 
-      {/* --- FULL SCREEN IMAGE MODAL (LIGHTBOX) --- */}
+      {/* Image Modal */}
       {selectedImage && (
         <div 
           className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-sm flex items-center justify-center p-2 transition-opacity"
           onClick={() => setSelectedImage(null)}
         >
-          {/* Close Button */}
           <button 
             className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors z-[70]"
             onClick={() => setSelectedImage(null)}
           >
             <X className="w-8 h-8" />
           </button>
-
-          {/* Large Image - Object Contain to ensure NO cropping in full screen */}
           <img 
             src={selectedImage} 
             alt="Full Screen View" 
@@ -336,19 +357,15 @@ function App() {
         </div>
       )}
 
-      {/* --- Floating Action Bar (Mobile) --- */}
+      {/* Floating Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-50 md:hidden">
         <div className="flex">
-          <a href="tel:9899320667" 
-            className="flex-1 flex items-center justify-center gap-2 py-4 font-bold text-slate-700 active:bg-slate-50">
-            <Phone className="w-5 h-5" />
-            Call
+          <a href="tel:9899320667" className="flex-1 flex items-center justify-center gap-2 py-4 font-bold text-slate-700 active:bg-slate-50">
+            <Phone className="w-5 h-5" /> Call
           </a>
           <div className="w-[1px] bg-slate-200"></div>
-          <a href="https://wa.me/919899320667?text=Hi" target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 py-4 font-bold text-green-600 active:bg-green-50">
-            <MessageCircle className="w-5 h-5" />
-            WhatsApp
+          <a href="https://wa.me/919899320667?text=Hi" target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 py-4 font-bold text-green-600 active:bg-green-50">
+            <MessageCircle className="w-5 h-5" /> WhatsApp
           </a>
         </div>
       </div>
