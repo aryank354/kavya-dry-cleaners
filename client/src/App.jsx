@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Phone, MessageCircle, Sparkles, MapPin, Search, Star, Award, ArrowRight, ArrowUpRight, ExternalLink, Shield } from 'lucide-react';
+import { Phone, MessageCircle, Sparkles, MapPin, Search, Star, Award, ArrowRight, ArrowUpRight, ExternalLink, Shield, Camera, X } from 'lucide-react';
 import axios from 'axios';
 
-// --- API URL CONFIGURATION ---
-// This automatically switches between Localhost (for coding) and Render (for deployment)
+// --- 1. API CONNECTION ---
 const API_URL = import.meta.env.PROD 
-  ? "https://kavya-dry-cleaners.onrender.com/api/services" // Your LIVE Render URL
-  : "http://localhost:5000/api/services";                  // Your Local URL
+  ? "https://kavya-dry-cleaners.onrender.com/api/services" 
+  : "http://localhost:5000/api/services";
 
 const categories = ['All', 'Men', 'Women', 'Household', 'Winter', 'Others'];
 
@@ -17,18 +16,27 @@ const features = [
   { icon: Award, title: "Expert Team", desc: "20+ years experience" }
 ];
 
+// --- 2. SHOP PHOTOS ---
+const galleryImages = [
+  { src: "/shop1.jpg", alt: "Kavya Dry Cleaners Main Shop" },
+  // Uncomment to add more later:
+  // { src: "/shop2.jpg", alt: "Ironing Area" },
+];
+
 function App() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [scrolled, setScrolled] = useState(false);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // New State for the Full Screen Image View
+  const [selectedImage, setSelectedImage] = useState(null);
 
-  // Fetch data from Backend
+  // Fetch Data
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        console.log("Fetching data from:", API_URL);
         const response = await axios.get(API_URL);
         setServices(response.data);
         setLoading(false);
@@ -40,12 +48,14 @@ function App() {
     fetchServices();
   }, []);
 
+  // Handle Scroll
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Filter Logic
   const filteredServices = services.filter(item => {
     const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -53,7 +63,7 @@ function App() {
   });
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-20 font-sans">
       
       {/* --- Navigation --- */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -73,10 +83,10 @@ function App() {
                 </svg>
               </div>
               <div>
-                <h1 className="font-bold text-xl leading-tight text-blue-900">
+                <h1 className="font-board font-bold text-2xl md:text-3xl leading-none text-blue-900 uppercase tracking-tight">
                   Kavya Dry Cleaners
                 </h1>
-                <p className="text-xs text-slate-500 font-medium">Premium Care Since 2001</p>
+                <p className="text-xs text-slate-500 font-medium tracking-wide">Premium Care Since 2001</p>
               </div>
             </div>
             
@@ -93,7 +103,7 @@ function App() {
       </nav>
 
       {/* --- Hero Section --- */}
-      <div className="pt-28 pb-12 px-4">
+      <div className="pt-32 pb-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-xs font-bold mb-6 tracking-wide uppercase">
             <Star className="w-3 h-3 fill-current" />
@@ -106,8 +116,7 @@ function App() {
           </h2>
           
           <p className="text-lg md:text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Experience the  
-             <span className="font-bold text-slate-900"> premium difference</span>.
+            Experience the <span className="font-bold text-slate-900">premium difference</span>.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
@@ -136,6 +145,58 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* --- SHOP GALLERY SECTION (FIXED: Full Vertical Photo) --- */}
+      {galleryImages.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 mb-16">
+          <div className="flex items-center gap-2 mb-6">
+             <Camera className="w-6 h-6 text-blue-600" />
+             <h3 className="text-2xl font-bold text-slate-900">Our Facility</h3>
+          </div>
+          
+          {/* Container Logic: If 1 photo, use Flex to center. If more, use Grid. */}
+          <div className={`
+            ${galleryImages.length === 1 ? 'flex justify-center' : ''}
+            ${galleryImages.length === 2 ? 'grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto' : ''}
+            ${galleryImages.length > 2 ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4' : ''}
+          `}>
+            {galleryImages.map((img, idx) => (
+              <div 
+                key={idx} 
+                onClick={() => setSelectedImage(img.src)}
+                className={`
+                  group relative rounded-2xl overflow-hidden shadow-lg border-4 border-white bg-white cursor-pointer hover:shadow-xl transition-all duration-300
+                  /* LOGIC FOR 1 PHOTO: Limit width to phone size (md), allow natural height (h-auto) */
+                  ${galleryImages.length === 1 ? 'w-full max-w-sm md:max-w-md h-auto' : 'w-full h-64'} 
+                `}
+              >
+                <img 
+                  src={img.src} 
+                  alt={img.alt} 
+                  /* LOGIC: 'object-contain' ensures NOTHING is cropped if single photo */
+                  className={`w-full h-full transition-transform duration-500 group-hover:scale-105
+                    ${galleryImages.length === 1 ? 'object-contain' : 'object-cover'}
+                  `}
+                  onError={(e) => {
+                      e.target.style.display = 'none'; 
+                      e.target.parentNode.style.display = 'none';
+                  }}
+                />
+                
+                {/* Only show text overlay on grid view (multiple photos), hide on single view to keep it clean */}
+                {galleryImages.length > 1 && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                    <div className="flex justify-between items-center w-full">
+                      <p className="text-white font-medium">{img.alt}</p>
+                      <ArrowUpRight className="text-white w-5 h-5" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* --- Address Section --- */}
       <div className="max-w-4xl mx-auto px-4 mb-16">
@@ -194,7 +255,6 @@ function App() {
           ))}
         </div>
 
-        {/* Loading State or Grid */}
         {loading ? (
            <div className="text-center py-12">
              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
@@ -251,6 +311,30 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* --- FULL SCREEN IMAGE MODAL (LIGHTBOX) --- */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-sm flex items-center justify-center p-2 transition-opacity"
+          onClick={() => setSelectedImage(null)}
+        >
+          {/* Close Button */}
+          <button 
+            className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors z-[70]"
+            onClick={() => setSelectedImage(null)}
+          >
+            <X className="w-8 h-8" />
+          </button>
+
+          {/* Large Image - Object Contain to ensure NO cropping in full screen */}
+          <img 
+            src={selectedImage} 
+            alt="Full Screen View" 
+            className="max-w-full max-h-[95vh] object-contain rounded shadow-2xl animate-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()} 
+          />
+        </div>
+      )}
 
       {/* --- Floating Action Bar (Mobile) --- */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-50 md:hidden">
