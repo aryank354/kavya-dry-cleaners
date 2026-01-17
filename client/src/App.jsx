@@ -227,7 +227,7 @@ function App() {
 
       {/* Address */}
       <div className="max-w-4xl mx-auto px-4 mb-16">
-        <div onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=D-313+Tagore+Garden+Extn+New+Delhi+110027', '_blank')}
+        <div onClick={() => window.open('https://www.google.com/maps?q=28.651921,77.1109789&z=17&hl=en', '_blank')}
           className="bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 cursor-pointer hover:border-blue-200 transition-all group">
           <div className="flex items-start gap-4">
             <div className="bg-orange-100 p-3 rounded-xl text-orange-600 shrink-0">

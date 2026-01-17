@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import axios from 'axios';
-import { Trash2, Plus, Printer, MessageCircle, LogOut, Search, X, History, FileText } from 'lucide-react';
+import { Trash2, Plus, Printer, MessageCircle, LogOut, Search, X, History, FileText, Calendar } from 'lucide-react';
 
 const AdminPanel = ({ onLogout, apiUrl }) => {
   // --- STATE ---
@@ -11,6 +11,9 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
   const [remarks, setRemarks] = useState('');
   const [recentBills, setRecentBills] = useState([]);
   
+  // New: Delivery Date State
+  const [deliveryDate, setDeliveryDate] = useState('');
+
   // Cart State
   const [itemSearch, setItemSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -19,11 +22,11 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
   const [cart, setCart] = useState([]);
 
   const wrapperRef = useRef(null);
-  const priceInputRef = useRef(null); // Ref to auto-focus price
+  const priceInputRef = useRef(null); 
 
   // --- INIT ---
   useEffect(() => {
-    // Fetch Rates
+    // 1. Fetch Rates
     const fetchServices = async () => {
       try {
         const response = await axios.get(apiUrl);
@@ -34,9 +37,14 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
     };
     fetchServices();
 
-    // Load History
+    // 2. Load History
     const history = JSON.parse(localStorage.getItem("kavya_bill_history") || "[]");
     setRecentBills(history);
+
+    // 3. Set Default Delivery Date (Today + 3 Days)
+    const today = new Date();
+    today.setDate(today.getDate() + 3);
+    setDeliveryDate(today.toISOString().split('T')[0]); // Format YYYY-MM-DD for input
   }, [apiUrl]);
 
   // --- CLOSE SEARCH DROPDOWN ---
@@ -58,16 +66,12 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
 
   const selectSuggestion = (item) => {
     setItemSearch(item.name);
-    // Remove non-numeric characters (e.g., "80 /panel" -> "80")
     const numericPrice = parseInt(item.price.replace(/[^0-9]/g, '')) || 0;
     setPrice(numericPrice);
     setShowSuggestions(false);
-    // Focus quantity after selection
-    // (Optional: focus quantity or add button, usually focusing quantity is nice)
   };
 
   const selectCustomItem = () => {
-    // Just close dropdown and focus price
     setShowSuggestions(false);
     if(priceInputRef.current) {
         priceInputRef.current.focus();
@@ -78,14 +82,12 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
     if (!itemSearch || !price) return;
     const newItem = {
       id: Date.now(),
-      name: itemSearch, // Uses whatever is typed (Custom or Selected)
+      name: itemSearch, 
       price: parseFloat(price),
       qty: parseInt(quantity),
       total: parseFloat(price) * parseInt(quantity)
     };
     setCart([...cart, newItem]);
-    
-    // Reset inputs
     setItemSearch('');
     setPrice('');
     setQuantity(1);
@@ -103,9 +105,11 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
     s.name.toLowerCase().includes(itemSearch.toLowerCase())
   );
 
-  // --- HELPER: FORMAT DATE (DD/MM/YYYY) ---
-  const formatDate = (dateObj) => {
-    return dateObj.toLocaleDateString('en-GB');
+  // --- HELPER: FORMAT DATE FOR DISPLAY (YYYY-MM-DD -> DD/MM/YYYY) ---
+  const formatDisplayDate = (isoDateString) => {
+    if(!isoDateString) return "";
+    const [year, month, day] = isoDateString.split('-');
+    return `${day}/${month}/${year}`;
   };
 
   // --- SAVE TO HISTORY ---
@@ -114,7 +118,7 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
       id: Date.now(),
       customer: customer.name,
       amount: calculateGrandTotal(),
-      date: formatDate(new Date()),
+      date: new Date().toLocaleDateString('en-GB'),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     const updatedHistory = [newBill, ...recentBills].slice(0, 10);
@@ -129,20 +133,18 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
     try {
       const doc = new jsPDF();
       const orderDate = new Date();
-      const deliveryDate = new Date(orderDate);
-      deliveryDate.setDate(deliveryDate.getDate() + 3);
+      // Use selected delivery date
+      const formattedDeliveryDate = formatDisplayDate(deliveryDate);
 
       // Header Blue Box
       doc.setFillColor(37, 99, 235);
       doc.rect(0, 0, 210, 40, 'F');
       
-      // Title
       doc.setFont("helvetica", "bold");
       doc.setFontSize(22);
       doc.setTextColor(255, 255, 255);
       doc.text("KAVYA DRY CLEANERS", 105, 15, null, null, "center");
       
-      // Shop Address
       doc.setFontSize(12);
       doc.setFont("helvetica", "normal");
       doc.text("D-313, Tagore Garden Extension, New Delhi - 110027", 105, 25, null, null, "center");
@@ -155,19 +157,18 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
       doc.text(`Phone: ${customer.phone}`, 15, 56);
       doc.text(`Address: ${customer.address || 'N/A'}`, 15, 62);
       
-      // Remarks
       if(remarks) {
         doc.setFont("helvetica", "italic");
         doc.text(`Remarks: ${remarks}`, 15, 68);
         doc.setFont("helvetica", "normal");
       }
 
-      // Dates (Formatted DD/MM/YYYY)
-      doc.text(`Bill Date: ${formatDate(orderDate)}`, 130, 50);
+      // Dates
+      doc.text(`Bill Date: ${orderDate.toLocaleDateString('en-GB')}`, 130, 50);
       
       doc.setTextColor(220, 38, 38); // Red
       doc.setFont("helvetica", "bold");
-      doc.text(`Delivery: ${formatDate(deliveryDate)}`, 130, 56);
+      doc.text(`Delivery: ${formattedDeliveryDate}`, 130, 56);
 
       // Table
       const tableRows = cart.map(item => [item.name, item.qty, item.price, item.total]);
@@ -200,13 +201,13 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
   // --- WHATSAPP LOGIC ---
   const sendWhatsApp = () => {
     if(!customer.phone) return alert("Please enter customer phone number");
-    const deliveryDate = new Date();
-    deliveryDate.setDate(deliveryDate.getDate() + 3);
+    
+    const formattedDeliveryDate = formatDisplayDate(deliveryDate);
     
     let message = `*Kavya Dry Cleaners Bill*%0a`;
     message += `Customer: ${customer.name}%0a`;
     message += `Total: ₹${calculateGrandTotal()}%0a`;
-    message += `*Delivery: ${formatDate(deliveryDate)}*%0a%0a`; // Fixed Date
+    message += `*Delivery: ${formattedDeliveryDate}*%0a%0a`;
     if(remarks) message += `Note: ${remarks}%0a`;
     message += `Items:%0a`;
     cart.forEach(item => message += `- ${item.name} x ${item.qty} (₹${item.total})%0a`);
@@ -245,22 +246,36 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                  value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} 
                />
+               
+               {/* Address & Delivery Date Row */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input 
                     type="text" placeholder="Address" 
                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                     value={customer.address} onChange={e => setCustomer({...customer, address: e.target.value})} 
                   />
-                  <input 
-                    type="text" placeholder="Remarks (e.g. Stains)" 
-                    className="w-full p-3 bg-yellow-50 border border-yellow-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-yellow-400 outline-none transition-all placeholder-yellow-600 text-yellow-900"
-                    value={remarks} onChange={e => setRemarks(e.target.value)} 
-                  />
+                  
+                  {/* Delivery Date Picker */}
+                  <div className="relative">
+                    <label className="absolute -top-2 left-2 bg-white px-1 text-[10px] font-bold text-blue-600">Delivery Date</label>
+                    <input 
+                        type="date"
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700"
+                        value={deliveryDate}
+                        onChange={(e) => setDeliveryDate(e.target.value)}
+                    />
+                  </div>
                </div>
+
+               <input 
+                 type="text" placeholder="Remarks (e.g. Stains)" 
+                 className="w-full p-3 bg-yellow-50 border border-yellow-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-yellow-400 outline-none transition-all placeholder-yellow-600 text-yellow-900"
+                 value={remarks} onChange={e => setRemarks(e.target.value)} 
+               />
              </div>
           </div>
 
-          {/* 2. Add Clothes (Smart Search + Custom) */}
+          {/* 2. Add Clothes */}
           <div className="bg-blue-50 p-5 rounded-2xl border border-blue-200 shadow-sm relative">
              <h3 className="font-bold text-blue-900 mb-4 text-lg border-b border-blue-200 pb-2">2. Add Clothes</h3>
              
@@ -277,14 +292,12 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
                     />
                     <Search className="absolute left-3 top-3.5 text-blue-400 w-5 h-5" />
                     
-                    {/* Clear Button */}
                     {itemSearch && (
                       <button onClick={() => { setItemSearch(''); setPrice(''); }} className="absolute right-3 top-3.5 text-slate-400 hover:text-red-500">
                         <X className="w-5 h-5" />
                       </button>
                     )}
 
-                    {/* Suggestions Dropdown */}
                     {showSuggestions && itemSearch && (
                       <div className="absolute z-20 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-2 max-h-60 overflow-y-auto">
                         {filteredServices.length > 0 ? (
@@ -295,7 +308,6 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
                             </div>
                           ))
                         ) : (
-                          // CUSTOM OPTION WHEN NOT FOUND
                           <div 
                             onClick={selectCustomItem}
                             className="p-3 hover:bg-green-50 cursor-pointer border-b border-slate-50 flex items-center gap-2 text-green-700 font-medium"
@@ -303,7 +315,6 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
                             <Plus size={16} /> Add "{itemSearch}" as Custom Item
                           </div>
                         )}
-                        {/* Always show custom option at bottom even if found (optional UX choice) */}
                         {filteredServices.length > 0 && (
                              <div 
                              onClick={selectCustomItem}
@@ -316,12 +327,12 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
                     )}
                 </div>
 
-                {/* Price & Qty Row (Responsive) */}
+                {/* Price & Qty Row */}
                 <div className="flex gap-3">
                    <div className="relative flex-1">
                       <span className="absolute left-3 top-3 text-slate-400 font-bold">₹</span>
                       <input 
-                        ref={priceInputRef} // AUTO FOCUS TARGET
+                        ref={priceInputRef}
                         type="number" 
                         className="w-full p-3 pl-8 border border-blue-200 rounded-xl font-bold text-blue-700 focus:ring-2 focus:ring-blue-500 outline-none"
                         placeholder="Price"
@@ -349,17 +360,15 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Bill Preview & Actions */}
+        {/* RIGHT COLUMN: Bill Preview */}
         <div className="flex flex-col h-full space-y-6">
           
-          {/* 3. Order Summary */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-1 overflow-hidden">
              <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
                 <h3 className="font-bold text-slate-700">3. Bill Preview</h3>
                 <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-full">{cart.length} items</span>
              </div>
 
-             {/* Scrollable Table Area */}
              <div className="flex-1 overflow-y-auto min-h-[300px] p-2">
                 {cart.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-slate-300 gap-2">
@@ -394,14 +403,20 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
                 )}
              </div>
 
-             {/* Total Bar */}
              <div className="bg-slate-900 text-white p-5 flex justify-between items-center">
-                <span className="text-slate-300">Total Amount</span>
-                <span className="text-3xl font-bold">₹{calculateGrandTotal()}</span>
+                <div className="flex flex-col">
+                  <span className="text-slate-300 text-xs uppercase">Total Amount</span>
+                  <span className="text-3xl font-bold">₹{calculateGrandTotal()}</span>
+                </div>
+                {deliveryDate && (
+                  <div className="text-right">
+                     <span className="text-slate-400 text-xs block">Delivery</span>
+                     <span className="text-sm font-bold text-green-400">{formatDisplayDate(deliveryDate)}</span>
+                  </div>
+                )}
              </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-4">
              <button 
                onClick={generatePDF}
@@ -417,7 +432,6 @@ const AdminPanel = ({ onLogout, apiUrl }) => {
              </button>
           </div>
 
-          {/* Local History */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1">
                <History size={12} /> Recent Local Bills
