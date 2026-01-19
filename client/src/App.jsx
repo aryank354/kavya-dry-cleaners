@@ -225,9 +225,12 @@ function App() {
         </div>
       )}
 
+
+      
+
       {/* Address */}
       <div className="max-w-4xl mx-auto px-4 mb-16">
-        <div onClick={() => window.open('https://www.google.com/maps?q=28.651921,77.1109789&z=17&hl=en', '_blank')}
+        <div onClick={() => window.open('https://www.google.com/maps/place/Kavya+Dry+Cleaners/@28.6519298,77.1109615,21z/data=!4m6!3m5!1s0x390d030de9901a6d:0xaea60db71cc17434!8m2!3d28.6518955!4d77.1110618!16s%2Fg%2F11mzfy7zk6?entry=ttu&g_ep=EgoyMDI2MDExMy4wIKXMDSoASAFQAw%3D%3D', '_blank')}
           className="bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 cursor-pointer hover:border-blue-200 transition-all group">
           <div className="flex items-start gap-4">
             <div className="bg-orange-100 p-3 rounded-xl text-orange-600 shrink-0">
