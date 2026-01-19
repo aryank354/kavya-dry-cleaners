@@ -38,7 +38,7 @@ const services = [
   { name: "Sherwani 1pc", price: 200, category: "Gents Wear" },
   { name: "Kurta Pajama", price: 160, category: "Gents Wear" },
   { name: "Loi", price: 200, category: "Gents Wear" },
-  { name: "Nehru Jacket", price: 130, category: "Gents Wear" },
+  { name: "Nehru Jacket / Base Coat", price: 130, category: "Gents Wear" },
 
   // --- Winter/Outerwear ---
   { name: "Sweater", price: 130, category: "Outerwear" },
