@@ -1,13 +1,158 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const app = express();
+const mongoose = require('mongoose');
 
-// --- CONFIGURATION ---
-app.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
+const app = express();
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PATCH', 'DELETE'] }));
 app.use(express.json());
 
-// --- DATA ---
+// --- 1. CONNECT TO DATABASE ---
+// Replace <password> with your actual MongoDB password if needed
+const MONGO_URI = "mongodb+srv://kavyaadmin:aryan%40123@kavyadrycleaners.9tx7twb.mongodb.net/kavya_billing?retryWrites=true&w=majority&appName=kavyadrycleaners";;
 
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("✅ Connected to Online Database"))
+  .catch(err => console.error("❌ Database Error:", err));
+
+// --- 2. DATA MODELS ---
+
+// Bill Schema
+const BillSchema = new mongoose.Schema({
+  customerName: String,
+  phone: String,
+  address: String,
+  items: Array,
+  totalAmount: Number,
+  date: String,        // DD/MM/YYYY for display
+  isoDate: Date,       // Real Date object for sorting
+  deliveryDate: String,
+  remarks: String,
+  status: { type: String, default: 'Pending' }, // Pending, Ready, Delivered
+  createdAt: { type: Date, default: Date.now }
+});
+const Bill = mongoose.model('Bill', BillSchema);
+
+// News Schema (For Website Top Bar)
+const NewsSchema = new mongoose.Schema({
+  message: String,
+  active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const News = mongoose.model('News', NewsSchema);
+
+// --- 3. ROUTES ---
+
+// Login Route
+app.post('/api/login', (req, res) => {
+  const { password } = req.body;
+  const SECRET = "ak12345"; // Your Admin Password
+  
+  if (password === SECRET) {
+    res.json({ success: true, message: "Login Successful" });
+  } else {
+    res.status(401).json({ success: false, message: "Invalid Password" });
+  }
+});
+
+// --- BILLING ROUTES ---
+
+// Save New Bill
+app.post('/api/bills', async (req, res) => {
+  try {
+    const newBill = new Bill({
+      ...req.body,
+      isoDate: new Date() // Add real date for sorting
+    });
+    await newBill.save();
+    res.json({ success: true, message: "Bill Saved!" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get Bills (With Search & Filter)
+app.get('/api/bills', async (req, res) => {
+  try {
+    const { search, date } = req.query;
+    let query = {};
+
+    // Search by Name or Phone
+    if (search) {
+      query.$or = [
+        { customerName: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Search by Date (Exact Match DD/MM/YYYY)
+    if (date) {
+      query.date = date; 
+    }
+
+    const bills = await Bill.find(query).sort({ createdAt: -1 }).limit(100);
+    res.json(bills);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update Bill Status (e.g. Pending -> Delivered)
+app.patch('/api/bills/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const bill = await Bill.findById(req.params.id);
+
+    if (!bill) return res.status(404).json({ error: "Bill not found" });
+
+    // Lock if Delivered
+    if (bill.status === 'Delivered' && status !== 'Delivered') {
+      return res.status(400).json({ error: "Cannot modify a Delivered order!" });
+    }
+
+    bill.status = status;
+    await bill.save();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- NEWS ROUTES ---
+
+// Get Active News
+app.get('/api/news', async (req, res) => {
+  try {
+    const news = await News.find({ active: true }).sort({ createdAt: -1 }).limit(1);
+    res.json(news);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Post News Update
+app.post('/api/news', async (req, res) => {
+  try {
+    await News.deleteMany({}); // Only keep 1 active message
+    const newUpdate = new News({ message: req.body.message });
+    await newUpdate.save();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete News
+app.delete('/api/news', async (req, res) => {
+  try {
+    await News.deleteMany({});
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- SERVICES DATA (Your Full Rate List) ---
 const services = [
   // --- LADIES WEAR ---
   { name: "Ladies Suit (2 Pc)", price: 160, category: "Ladies Wear", popular: true },
@@ -81,27 +226,13 @@ const services = [
   { name: "Carpet Dry Clean", price: "Quote", note: "On Inspection", category: "Others" }
 ];
 
-// --- ROUTES ---
-
-app.get('/', (req, res) => {
-  res.send('Kavya Dry Cleaners API is running');
-});
-
-// 1. Get All Services
 app.get('/api/services', (req, res) => {
   res.json(services);
 });
 
-// 2. Secure Login Route (New!)
-app.post('/api/login', (req, res) => {
-  const { password } = req.body;
-  const SECRET = "ak12345"; // Your Admin Password
-
-  if (password === SECRET) {
-    res.json({ success: true, message: "Login Successful" });
-  } else {
-    res.status(401).json({ success: false, message: "Invalid Password" });
-  }
+// Root Route (for Wake-up pings)
+app.get('/', (req, res) => {
+  res.send('Kavya Dry Cleaners API is running');
 });
 
 // --- START SERVER ---

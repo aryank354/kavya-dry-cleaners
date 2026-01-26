@@ -2,459 +2,279 @@ import { useState, useEffect, useRef } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import axios from 'axios';
-import { Trash2, Plus, Printer, MessageCircle, LogOut, Search, X, History, FileText, Calendar } from 'lucide-react';
+import { Trash2, Plus, Printer, LogOut, Search, Bell, Send, CheckCircle } from 'lucide-react';
 
 const AdminPanel = ({ onLogout, apiUrl }) => {
-  // --- STATE ---
+  // TABS: 'new' | 'history' | 'updates'
+  const [activeTab, setActiveTab] = useState('new'); 
+
+  // STATES
   const [services, setServices] = useState([]);
   const [customer, setCustomer] = useState({ name: '', phone: '', address: '' });
   const [remarks, setRemarks] = useState('');
-  const [recentBills, setRecentBills] = useState([]);
-  
-  // New: Delivery Date State
   const [deliveryDate, setDeliveryDate] = useState('');
-
-  // Cart State
+  
+  // Cart
   const [itemSearch, setItemSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [price, setPrice] = useState(''); 
   const [quantity, setQuantity] = useState(1);
   const [cart, setCart] = useState([]);
 
+  // History
+  const [historyBills, setHistoryBills] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterDate, setFilterDate] = useState('');
+
+  // News Update State
+  const [newsMessage, setNewsMessage] = useState('');
+  const [currentNews, setCurrentNews] = useState(null);
+
   const wrapperRef = useRef(null);
-  const priceInputRef = useRef(null); 
+  const priceInputRef = useRef(null);
+  const BASE_URL = apiUrl.replace('/services', '');
 
   // --- INIT ---
   useEffect(() => {
-    // 1. Fetch Rates
-    const fetchServices = async () => {
+    const initData = async () => {
       try {
-        const response = await axios.get(apiUrl);
-        setServices(response.data);
-      } catch (error) {
-        console.error("Error loading rates");
-      }
+        const res = await axios.get(apiUrl);
+        setServices(res.data);
+      } catch (e) { console.error(e); }
+      
+      const today = new Date();
+      today.setDate(today.getDate() + 3);
+      setDeliveryDate(today.toISOString().split('T')[0]);
+
+      fetchHistory();
+      fetchNews();
     };
-    fetchServices();
-
-    // 2. Load History
-    const history = JSON.parse(localStorage.getItem("kavya_bill_history") || "[]");
-    setRecentBills(history);
-
-    // 3. Set Default Delivery Date (Today + 3 Days)
-    const today = new Date();
-    today.setDate(today.getDate() + 3);
-    setDeliveryDate(today.toISOString().split('T')[0]); // Format YYYY-MM-DD for input
+    initData();
   }, [apiUrl]);
 
-  // --- CLOSE SEARCH DROPDOWN ---
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setShowSuggestions(false);
-      }
+  // --- API CALLS ---
+  const fetchHistory = async () => {
+    try {
+      let d = '';
+      if(filterDate) { const [y,m,day] = filterDate.split('-'); d = `${day}/${m}/${y}`; }
+      const res = await axios.get(`${BASE_URL}/bills`, { params: { search: searchQuery, date: d } });
+      setHistoryBills(res.data);
+    } catch(e) {}
+  };
+
+  const fetchNews = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/news`);
+      setCurrentNews(res.data.length > 0 ? res.data[0] : null);
+    } catch(e) {}
+  };
+
+  const postNews = async () => {
+    if(!newsMessage) return;
+    await axios.post(`${BASE_URL}/news`, { message: newsMessage });
+    setNewsMessage('');
+    fetchNews();
+    alert("Website Updated Successfully!");
+  };
+
+  const deleteNews = async () => {
+    await axios.delete(`${BASE_URL}/news`);
+    fetchNews();
+  };
+
+  const updateStatus = async (billId, newStatus) => {
+    try {
+      await axios.patch(`${BASE_URL}/bills/${billId}/status`, { status: newStatus });
+      fetchHistory();
+    } catch (error) {
+      alert("Error updating status");
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [wrapperRef]);
-
-  // --- HANDLERS ---
-  const handleSearchChange = (e) => {
-    setItemSearch(e.target.value);
-    setShowSuggestions(true);
   };
 
-  const selectSuggestion = (item) => {
-    setItemSearch(item.name);
-    const numericPrice = parseInt(item.price.replace(/[^0-9]/g, '')) || 0;
-    setPrice(numericPrice);
-    setShowSuggestions(false);
-  };
-
-  const selectCustomItem = () => {
-    setShowSuggestions(false);
-    if(priceInputRef.current) {
-        priceInputRef.current.focus();
-    }
-  };
-
+  // --- BILLING HELPERS ---
   const addToCart = () => {
     if (!itemSearch || !price) return;
-    const newItem = {
-      id: Date.now(),
-      name: itemSearch, 
-      price: parseFloat(price),
-      qty: parseInt(quantity),
-      total: parseFloat(price) * parseInt(quantity)
-    };
-    setCart([...cart, newItem]);
-    setItemSearch('');
-    setPrice('');
-    setQuantity(1);
+    setCart([...cart, { id: Date.now(), name: itemSearch, price: parseFloat(price), qty: parseInt(quantity), total: parseFloat(price)*parseInt(quantity) }]);
+    setItemSearch(''); setPrice(''); setQuantity(1);
   };
+  const removeFromCart = (id) => setCart(cart.filter(i => i.id !== id));
+  const calculateTotal = () => cart.reduce((sum, i) => sum + i.total, 0);
 
-  const removeFromCart = (id) => {
-    setCart(cart.filter(item => item.id !== id));
-  };
-
-  const calculateGrandTotal = () => {
-    return cart.reduce((sum, item) => sum + item.total, 0);
-  };
-
-  const filteredServices = services.filter(s => 
-    s.name.toLowerCase().includes(itemSearch.toLowerCase())
-  );
-
-  // --- HELPER: FORMAT DATE FOR DISPLAY (YYYY-MM-DD -> DD/MM/YYYY) ---
-  const formatDisplayDate = (isoDateString) => {
-    if(!isoDateString) return "";
-    const [year, month, day] = isoDateString.split('-');
-    return `${day}/${month}/${year}`;
-  };
-
-  // --- SAVE TO HISTORY ---
-  const saveToHistory = () => {
+  // --- GENERATE PDF ---
+  const generatePDF = async () => {
+    if(!customer.name || cart.length===0) return alert("Fill details!");
     const newBill = {
-      id: Date.now(),
-      customer: customer.name,
-      amount: calculateGrandTotal(),
+      customerName: customer.name, phone: customer.phone, address: customer.address,
+      items: cart, totalAmount: calculateTotal(),
       date: new Date().toLocaleDateString('en-GB'),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      deliveryDate: deliveryDate ? new Date(deliveryDate).toLocaleDateString('en-GB') : '',
+      remarks: remarks
     };
-    const updatedHistory = [newBill, ...recentBills].slice(0, 10);
-    setRecentBills(updatedHistory);
-    localStorage.setItem("kavya_bill_history", JSON.stringify(updatedHistory));
-  };
-
-  // --- PDF GENERATION ---
-  const generatePDF = () => {
-    if (!customer.name || cart.length === 0) return alert("Fill customer name & add items!");
-
-    try {
-      const doc = new jsPDF();
-      const orderDate = new Date();
-      // Use selected delivery date
-      const formattedDeliveryDate = formatDisplayDate(deliveryDate);
-
-      // Header Blue Box
-      doc.setFillColor(37, 99, 235);
-      doc.rect(0, 0, 210, 40, 'F');
-      
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.setTextColor(255, 255, 255);
-      doc.text("KAVYA DRY CLEANERS", 105, 15, null, null, "center");
-      
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "normal");
-      doc.text("D-313, Tagore Garden Extension, New Delhi - 110027", 105, 25, null, null, "center");
-      doc.text("Mob: 9899320667", 105, 33, null, null, "center");
-
-      // Customer Info
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(11);
-      doc.text(`Customer: ${customer.name}`, 15, 50);
-      doc.text(`Phone: ${customer.phone}`, 15, 56);
-      doc.text(`Address: ${customer.address || 'N/A'}`, 15, 62);
-      
-      if(remarks) {
-        doc.setFont("helvetica", "italic");
-        doc.text(`Remarks: ${remarks}`, 15, 68);
-        doc.setFont("helvetica", "normal");
-      }
-
-      // Dates
-      doc.text(`Bill Date: ${orderDate.toLocaleDateString('en-GB')}`, 130, 50);
-      
-      doc.setTextColor(220, 38, 38); // Red
-      doc.setFont("helvetica", "bold");
-      doc.text(`Delivery: ${formattedDeliveryDate}`, 130, 56);
-
-      // Table
-      const tableRows = cart.map(item => [item.name, item.qty, item.price, item.total]);
-
-      autoTable(doc, {
-        head: [["Item", "Qty", "Rate", "Total"]],
-        body: tableRows,
-        startY: remarks ? 75 : 70,
-        theme: 'grid',
-        headStyles: { fillColor: [37, 99, 235] },
-        foot: [['', '', 'Grand Total:', calculateGrandTotal()]],
-        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
-      });
-
-      // Footer
-      const finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) || 150;
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.setFont("helvetica", "italic");
-      doc.text("Thank you for choosing Kavya Dry Cleaners!", 105, finalY + 20, null, null, "center");
-
-      doc.save(`${customer.name.replace(/\s/g, '_')}_Bill.pdf`);
-      saveToHistory();
-
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    }
-  };
-
-  // --- WHATSAPP LOGIC ---
-  const sendWhatsApp = () => {
-    if(!customer.phone) return alert("Please enter customer phone number");
+    await axios.post(`${BASE_URL}/bills`, newBill); // Save to DB
     
-    const formattedDeliveryDate = formatDisplayDate(deliveryDate);
+    // PDF Logic
+    const doc = new jsPDF();
+    doc.setFillColor(37, 99, 235); doc.rect(0,0,210,40,'F');
+    doc.setFontSize(22); doc.setTextColor(255); doc.text("KAVYA DRY CLEANERS", 105, 15, null, null, "center");
+    doc.setFontSize(12); doc.text("New Delhi - 110027 | Mob: 9899320667", 105, 28, null, null, "center");
     
-    let message = `*Kavya Dry Cleaners Bill*%0a`;
-    message += `Customer: ${customer.name}%0a`;
-    message += `Total: ₹${calculateGrandTotal()}%0a`;
-    message += `*Delivery: ${formattedDeliveryDate}*%0a%0a`;
-    if(remarks) message += `Note: ${remarks}%0a`;
-    message += `Items:%0a`;
-    cart.forEach(item => message += `- ${item.name} x ${item.qty} (₹${item.total})%0a`);
-    message += `%0aThank you!`;
-
-    window.open(`https://wa.me/91${customer.phone}?text=${message}`, '_blank');
-    saveToHistory();
+    doc.setTextColor(0); 
+    doc.text(`Customer: ${customer.name}`, 15, 50);
+    doc.text(`Delivery: ${newBill.deliveryDate}`, 130, 50);
+    
+    autoTable(doc, {
+      head: [["Item", "Qty", "Price", "Total"]],
+      body: cart.map(i => [i.name, i.qty, i.price, i.total]),
+      startY: 60,
+      foot: [['', '', 'Total:', calculateTotal()]]
+    });
+    doc.save(`${customer.name}_Bill.pdf`);
+    fetchHistory();
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-4 md:p-6 pt-24">
-      {/* Header Bar */}
-      <div className="bg-slate-900 rounded-xl p-4 md:p-6 mb-6 flex justify-between items-center text-white shadow-lg">
-        <h2 className="text-xl md:text-2xl font-bold">Admin Portal</h2>
-        <button onClick={onLogout} className="flex items-center gap-2 bg-red-600 px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">
-          <LogOut size={16} /> <span className="hidden sm:inline">Logout</span>
-        </button>
+    <div className="min-h-screen bg-slate-100 p-4 pt-24">
+      <div className="max-w-6xl mx-auto mb-6">
+        <div className="bg-slate-900 rounded-xl p-4 flex justify-between items-center text-white shadow-lg">
+          <h2 className="text-xl font-bold">Admin Portal</h2>
+          <div className="flex gap-2 text-sm">
+            <button onClick={()=>setActiveTab('new')} className={`px-3 py-2 rounded ${activeTab==='new'?'bg-blue-600':'hover:bg-white/10'}`}>+ New Bill</button>
+            <button onClick={()=>setActiveTab('history')} className={`px-3 py-2 rounded ${activeTab==='history'?'bg-blue-600':'hover:bg-white/10'}`}>History</button>
+            <button onClick={()=>setActiveTab('updates')} className={`px-3 py-2 rounded ${activeTab==='updates'?'bg-blue-600':'hover:bg-white/10'}`}>Updates</button>
+            <button onClick={onLogout} className="bg-red-600 px-3 py-2 rounded ml-2"><LogOut size={16}/></button>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* LEFT COLUMN: Input Forms */}
-        <div className="space-y-6">
-          
-          {/* 1. Customer Details */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-             <h3 className="font-bold text-slate-800 mb-4 text-lg border-b pb-2">1. Customer Details</h3>
-             <div className="space-y-4">
-               <input 
-                 type="text" placeholder="Customer Name *" 
-                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                 value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} 
-               />
-               <input 
-                 type="number" placeholder="Phone Number" 
-                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                 value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} 
-               />
-               
-               {/* Address & Delivery Date Row */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input 
-                    type="text" placeholder="Address" 
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    value={customer.address} onChange={e => setCustomer({...customer, address: e.target.value})} 
-                  />
-                  
-                  {/* Delivery Date Picker */}
-                  <div className="relative">
-                    <label className="absolute -top-2 left-2 bg-white px-1 text-[10px] font-bold text-blue-600">Delivery Date</label>
-                    <input 
-                        type="date"
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700"
-                        value={deliveryDate}
-                        onChange={(e) => setDeliveryDate(e.target.value)}
-                    />
-                  </div>
-               </div>
-
-               <input 
-                 type="text" placeholder="Remarks (e.g. Stains)" 
-                 className="w-full p-3 bg-yellow-50 border border-yellow-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-yellow-400 outline-none transition-all placeholder-yellow-600 text-yellow-900"
-                 value={remarks} onChange={e => setRemarks(e.target.value)} 
-               />
+      {/* --- TAB 1: NEW BILL --- */}
+      {activeTab === 'new' && (
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-xl shadow-sm space-y-4">
+             <h3 className="font-bold border-b pb-2">Customer</h3>
+             <input placeholder="Name" className="w-full p-2 border rounded" value={customer.name} onChange={e=>setCustomer({...customer, name:e.target.value})}/>
+             <input placeholder="Phone" className="w-full p-2 border rounded" value={customer.phone} onChange={e=>setCustomer({...customer, phone:e.target.value})}/>
+             <div className="flex gap-2">
+                <input type="date" className="p-2 border rounded flex-1" value={deliveryDate} onChange={e=>setDeliveryDate(e.target.value)}/>
+                <input placeholder="Remarks" className="p-2 border rounded flex-1" value={remarks} onChange={e=>setRemarks(e.target.value)}/>
              </div>
-          </div>
-
-          {/* 2. Add Clothes */}
-          <div className="bg-blue-50 p-5 rounded-2xl border border-blue-200 shadow-sm relative">
-             <h3 className="font-bold text-blue-900 mb-4 text-lg border-b border-blue-200 pb-2">2. Add Clothes</h3>
              
-             <div className="flex flex-col gap-3">
-                {/* Search Box */}
-                <div className="relative w-full" ref={wrapperRef}>
-                    <input 
-                      type="text" 
-                      className="w-full p-3 pl-10 border border-blue-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
-                      placeholder="Search item (e.g. Pant)"
-                      value={itemSearch}
-                      onChange={handleSearchChange}
-                      onFocus={() => setShowSuggestions(true)}
-                    />
-                    <Search className="absolute left-3 top-3.5 text-blue-400 w-5 h-5" />
-                    
-                    {itemSearch && (
-                      <button onClick={() => { setItemSearch(''); setPrice(''); }} className="absolute right-3 top-3.5 text-slate-400 hover:text-red-500">
-                        <X className="w-5 h-5" />
-                      </button>
-                    )}
+             <h3 className="font-bold border-b pb-2 pt-4">Add Items</h3>
+             <div className="relative" ref={wrapperRef}>
+                <input placeholder="Item Name" className="w-full p-2 border rounded" value={itemSearch} onChange={e=>{setItemSearch(e.target.value); setShowSuggestions(true)}} onFocus={()=>setShowSuggestions(true)}/>
+                {showSuggestions && itemSearch && (
+                  <div className="absolute z-10 bg-white w-full border shadow-xl max-h-40 overflow-y-auto">
+                    {services.filter(s=>s.name.toLowerCase().includes(itemSearch.toLowerCase())).map((s,i)=>(
+                      <div key={i} onClick={()=>{setItemSearch(s.name); setPrice(parseInt(s.price)); setShowSuggestions(false)}} className="p-2 hover:bg-blue-50 cursor-pointer flex justify-between"><span>{s.name}</span><b>{s.price}</b></div>
+                    ))}
+                    <div onClick={()=>{setShowSuggestions(false); priceInputRef.current.focus()}} className="p-2 text-green-700 font-bold cursor-pointer hover:bg-green-50">Custom Item</div>
+                  </div>
+                )}
+             </div>
+             <div className="flex gap-2">
+                <input ref={priceInputRef} type="number" placeholder="Price" className="w-full p-2 border rounded" value={price} onChange={e=>setPrice(e.target.value)}/>
+                <input type="number" placeholder="Qty" className="w-20 p-2 border rounded text-center" value={quantity} onChange={e=>setQuantity(e.target.value)}/>
+                <button onClick={addToCart} className="bg-blue-600 text-white p-2 rounded"><Plus/></button>
+             </div>
+          </div>
 
-                    {showSuggestions && itemSearch && (
-                      <div className="absolute z-20 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-2 max-h-60 overflow-y-auto">
-                        {filteredServices.length > 0 ? (
-                          filteredServices.map((s, i) => (
-                            <div key={i} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 flex justify-between items-center group">
-                              <span className="font-medium text-slate-700 group-hover:text-blue-700">{s.name}</span>
-                              <span className="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">₹{s.price}</span>
-                            </div>
-                          ))
-                        ) : (
-                          <div 
-                            onClick={selectCustomItem}
-                            className="p-3 hover:bg-green-50 cursor-pointer border-b border-slate-50 flex items-center gap-2 text-green-700 font-medium"
-                          >
-                            <Plus size={16} /> Add "{itemSearch}" as Custom Item
-                          </div>
-                        )}
-                        {filteredServices.length > 0 && (
-                             <div 
-                             onClick={selectCustomItem}
-                             className="p-2 text-xs text-center text-slate-400 hover:text-blue-600 cursor-pointer border-t border-slate-100"
+          <div className="bg-white p-6 rounded-xl shadow-sm flex flex-col">
+             <h3 className="font-bold border-b pb-2 mb-4">Cart ({cart.length})</h3>
+             <div className="flex-1 overflow-y-auto max-h-60">
+                {cart.map(item=>(
+                  <div key={item.id} className="flex justify-between border-b py-2 text-sm">
+                    <span>{item.name} x{item.qty}</span>
+                    <div className="flex gap-2 items-center font-bold">₹{item.total} <button onClick={()=>removeFromCart(item.id)} className="text-red-500"><Trash2 size={14}/></button></div>
+                  </div>
+                ))}
+             </div>
+             <div className="mt-auto pt-4 border-t flex justify-between text-xl font-bold">
+                <span>Total</span> <span>₹{calculateTotal()}</span>
+             </div>
+             <button onClick={generatePDF} className="w-full bg-green-600 text-white py-3 rounded mt-4 font-bold flex justify-center gap-2"><Printer/> Print Bill</button>
+          </div>
+        </div>
+      )}
+
+      {/* --- TAB 2: HISTORY --- */}
+      {activeTab === 'history' && (
+        <div className="max-w-6xl mx-auto bg-white p-6 rounded-xl shadow-sm">
+           <div className="flex gap-4 mb-4">
+              <div className="relative flex-1">
+                 <Search className="absolute left-3 top-2.5 text-slate-400" size={18}/>
+                 <input placeholder="Search History..." className="w-full pl-10 p-2 border rounded" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
+              </div>
+              <button onClick={fetchHistory} className="bg-slate-900 text-white px-4 rounded">Refresh</button>
+           </div>
+           <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50 border-b">
+                 <tr><th className="p-3">Date</th><th className="p-3">Customer</th><th className="p-3">Total</th><th className="p-3">Status</th></tr>
+              </thead>
+              <tbody>
+                 {historyBills.map(b=>(
+                   <tr key={b._id} className="border-b">
+                     <td className="p-3">{b.date}</td>
+                     <td className="p-3">{b.customerName}</td>
+                     <td className="p-3 font-bold text-blue-600">₹{b.totalAmount}</td>
+                     <td className="p-3">
+                       {b.status === 'Delivered' 
+                         ? <span className="text-green-600 font-bold flex gap-1"><CheckCircle size={14}/> Delivered</span>
+                         : <select 
+                             className="p-1 border rounded"
+                             value={b.status}
+                             onChange={(e) => updateStatus(b._id, e.target.value)}
                            >
-                             Or add "{itemSearch}" as custom
-                           </div>
-                        )}
-                      </div>
-                    )}
-                </div>
-
-                {/* Price & Qty Row */}
-                <div className="flex gap-3">
-                   <div className="relative flex-1">
-                      <span className="absolute left-3 top-3 text-slate-400 font-bold">₹</span>
-                      <input 
-                        ref={priceInputRef}
-                        type="number" 
-                        className="w-full p-3 pl-8 border border-blue-200 rounded-xl font-bold text-blue-700 focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="Price"
-                        value={price} 
-                        onChange={e => setPrice(e.target.value)} 
-                      />
-                   </div>
-                   <div className="w-24">
-                      <input 
-                        type="number" 
-                        className="w-full p-3 text-center border border-blue-200 rounded-xl font-bold focus:ring-2 focus:ring-blue-500 outline-none"
-                        value={quantity} 
-                        onChange={e => setQuantity(e.target.value)} 
-                        min="1"
-                      />
-                   </div>
-                   <button 
-                      onClick={addToCart} 
-                      className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 shadow-md shadow-blue-200 transition-transform active:scale-95"
-                   >
-                      <Plus size={24} />
-                   </button>
-                </div>
-             </div>
-          </div>
+                             <option value="Pending">Pending</option>
+                             <option value="Processing">Processing</option>
+                             <option value="Ready">Ready</option>
+                             <option value="Delivered">Delivered</option>
+                           </select>
+                       }
+                     </td>
+                   </tr>
+                 ))}
+              </tbody>
+           </table>
         </div>
+      )}
 
-        {/* RIGHT COLUMN: Bill Preview */}
-        <div className="flex flex-col h-full space-y-6">
-          
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-1 overflow-hidden">
-             <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-                <h3 className="font-bold text-slate-700">3. Bill Preview</h3>
-                <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-full">{cart.length} items</span>
-             </div>
+      {/* --- TAB 3: UPDATES --- */}
+      {activeTab === 'updates' && (
+        <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm text-center">
+           <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600">
+              <Bell size={32} />
+           </div>
+           <h2 className="text-2xl font-bold text-slate-900 mb-2">Website Updates</h2>
+           <p className="text-slate-500 mb-8">Post a message that will appear at the top of your website.</p>
 
-             <div className="flex-1 overflow-y-auto min-h-[300px] p-2">
-                {cart.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-300 gap-2">
-                    <FileText size={48} className="opacity-20" />
-                    <p className="text-sm">Add items to start billing</p>
-                  </div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead className="text-xs text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                      <tr>
-                        <th className="text-left p-3">Item</th>
-                        <th className="text-center p-3">Qty</th>
-                        <th className="text-right p-3">Total</th>
-                        <th className="p-3"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {cart.map((item) => (
-                        <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-3 font-medium text-slate-700">{item.name}</td>
-                          <td className="p-3 text-center text-slate-500">x{item.qty}</td>
-                          <td className="p-3 text-right font-bold text-slate-800">₹{item.total}</td>
-                          <td className="p-3 text-right">
-                            <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded transition-colors">
-                              <Trash2 size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-             </div>
+           <div className="flex gap-2 max-w-lg mx-auto mb-10">
+              <input 
+                type="text" 
+                placeholder="e.g. Shop Closed Tomorrow due to Holi" 
+                className="flex-1 p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500"
+                value={newsMessage}
+                onChange={e => setNewsMessage(e.target.value)}
+              />
+              <button onClick={postNews} className="bg-orange-600 text-white px-6 rounded-xl font-bold flex items-center gap-2 hover:bg-orange-700">
+                <Send size={18} /> Post
+              </button>
+           </div>
 
-             <div className="bg-slate-900 text-white p-5 flex justify-between items-center">
-                <div className="flex flex-col">
-                  <span className="text-slate-300 text-xs uppercase">Total Amount</span>
-                  <span className="text-3xl font-bold">₹{calculateGrandTotal()}</span>
+           {currentNews ? (
+             <div className="bg-green-50 border border-green-200 p-4 rounded-xl flex justify-between items-center max-w-lg mx-auto">
+                <div className="text-left">
+                   <p className="text-xs text-green-600 font-bold uppercase tracking-wider mb-1">Active Message</p>
+                   <p className="font-medium text-slate-800">"{currentNews.message}"</p>
                 </div>
-                {deliveryDate && (
-                  <div className="text-right">
-                     <span className="text-slate-400 text-xs block">Delivery</span>
-                     <span className="text-sm font-bold text-green-400">{formatDisplayDate(deliveryDate)}</span>
-                  </div>
-                )}
+                <button onClick={deleteNews} className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg">
+                   <Trash2 size={20} />
+                </button>
              </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-             <button 
-               onClick={generatePDF}
-               className="bg-green-600 text-white py-4 rounded-xl font-bold hover:bg-green-700 flex flex-col md:flex-row justify-center items-center gap-2 shadow-lg shadow-green-100 transition-transform active:scale-95"
-             >
-               <Printer size={20} /> <span>Print Bill</span>
-             </button>
-             <button 
-               onClick={sendWhatsApp}
-               className="bg-green-500 text-white py-4 rounded-xl font-bold hover:bg-green-600 flex flex-col md:flex-row justify-center items-center gap-2 shadow-lg shadow-green-100 transition-transform active:scale-95"
-             >
-               <MessageCircle size={20} /> <span>WhatsApp</span>
-             </button>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1">
-               <History size={12} /> Recent Local Bills
-             </h4>
-             <div className="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
-               {recentBills.length === 0 ? (
-                 <p className="text-xs text-slate-300 italic">No history yet.</p>
-               ) : (
-                 recentBills.map((bill, i) => (
-                   <div key={i} className="flex justify-between items-center text-xs p-2 bg-slate-50 rounded border border-slate-100">
-                     <div className="flex flex-col">
-                       <span className="font-bold text-slate-700 truncate max-w-[120px]">{bill.customer}</span>
-                       <span className="text-slate-400">{bill.date}</span>
-                     </div>
-                     <span className="font-bold text-blue-600">₹{bill.amount}</span>
-                   </div>
-                 ))
-               )}
-             </div>
-          </div>
-
+           ) : (
+             <p className="text-slate-400 italic">No active updates currently.</p>
+           )}
         </div>
-      </div>
+      )}
+
     </div>
   );
 };
