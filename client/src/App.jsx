@@ -71,14 +71,17 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-slate-800 font-sans">
       
-      {/* Notification Bar (News) */}
-      <NotificationBar apiUrl={BASE_URL} />
-
-      <Navbar 
-        onRequestCallback={handleRequestCallback} 
-        onAdminLogin={handleAdminLogin} 
-      />
+      {/* FIXED: Wrapper that holds both Notification and Navbar fixed to top */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex flex-col">
+        <NotificationBar apiUrl={BASE_URL} />
+        
+        <Navbar 
+          onRequestCallback={handleRequestCallback} 
+          onAdminLogin={handleAdminLogin} 
+        />
+      </div>
       
+      {/* Main Content */}
       <Hero onRequestCallback={handleRequestCallback} />
       
       <Services onRequestCallback={handleRequestCallback} />

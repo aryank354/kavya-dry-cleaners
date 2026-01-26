@@ -25,7 +25,8 @@ const Hero = ({ onRequestCallback }) => {
   }, [shopImages.length]);
 
   return (
-    <section className="bg-[#2563EB] text-white pt-12 pb-20 md:pt-24 md:pb-32 px-4 relative overflow-hidden font-sans">
+    // FIXED: Increased 'pt-12 md:pt-24' to 'pt-32 md:pt-48' so content starts below the fixed header
+    <section className="bg-[#2563EB] text-white pt-32 pb-20 md:pt-48 md:pb-32 px-4 relative overflow-hidden font-sans">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
         
         {/* Left Content */}

@@ -37,7 +37,7 @@ const Navbar = ({ onRequestCallback, onAdminLogin }) => {
     } else {
       const element = document.querySelector(href);
       if (element) {
-        const offset = 80; // navbar height
+        const offset = 120; // Increased offset to account for Notification Bar + Navbar
         const elementPosition = element.getBoundingClientRect().top;
         const offsetPosition = elementPosition + window.pageYOffset - offset;
         window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
@@ -47,7 +47,8 @@ const Navbar = ({ onRequestCallback, onAdminLogin }) => {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      {/* FIXED: Changed from 'fixed top-0...' to 'w-full relative' so it stacks under the notification bar */}
+      <nav className={`w-full relative transition-all duration-300 ${
         scrolled 
           ? 'bg-white shadow-md' 
           : 'bg-white shadow-sm'
@@ -277,9 +278,6 @@ const Navbar = ({ onRequestCallback, onAdminLogin }) => {
           </div>
         </div>
       </div>
-
-      {/* Spacer to prevent content from hiding under fixed navbar */}
-      <div className="h-16 md:h-20"></div>
     </>
   );
 };
