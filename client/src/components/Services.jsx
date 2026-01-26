@@ -44,7 +44,7 @@ const Services = ({ onRequestCallback }) => {
       image: "/suit.jpg",       
       imgLabel: "Suit",
       deliveryTime: "2-3 Days",
-      price: 350,          
+      price: 400,          
       originalPrice: 500   
     },
     { 
