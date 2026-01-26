@@ -8,8 +8,8 @@ app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PATCH', 'DELETE'] }));
 app.use(express.json());
 
 // --- 1. CONNECT TO DATABASE ---
-// Replace <password> with your actual MongoDB password if needed
-const MONGO_URI = "mongodb+srv://kavyaadmin:aryan%40123@kavyadrycleaners.9tx7twb.mongodb.net/kavya_billing?retryWrites=true&w=majority&appName=kavyadrycleaners";;
+// Now using the environment variable from your .env file
+const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ Connected to Online Database"))

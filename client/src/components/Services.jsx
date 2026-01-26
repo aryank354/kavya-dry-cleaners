@@ -1,10 +1,9 @@
-import { CheckCircle, Play, X, Tag } from 'lucide-react';
+import { CheckCircle, Play, X, Tag, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const Services = ({ onRequestCallback }) => {
   const [playingVideo, setPlayingVideo] = useState(null);
 
-  // --- 1. SHOP IMAGES FOR AUTO SLIDER ---
   const shopImages = [
     "/shop1.jpg",
     "/shop2.jpg",
@@ -13,7 +12,6 @@ const Services = ({ onRequestCallback }) => {
   ];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // --- 2. AUTO SLIDER LOGIC ---
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % shopImages.length);
@@ -21,8 +19,6 @@ const Services = ({ onRequestCallback }) => {
     return () => clearInterval(interval);
   }, [shopImages.length]);
 
-
-  // --- 3. SERVICE LIST ---
   const serviceList = [
     { 
       title: "Ornamental Dress", 
@@ -30,8 +26,8 @@ const Services = ({ onRequestCallback }) => {
       image: "/dress.jpg",      
       imgLabel: "Dress",
       deliveryTime: "3-5 Days",
-      price: "700 - 1000",   // <--- UPDATED: Range as a String
-      originalPrice: 1200    // <--- UPDATED: Increased original price so it looks like a discount
+      price: "700 - 1000",
+      originalPrice: 1200
     },
     { 
       title: "Saree + Blouse", 
@@ -96,7 +92,6 @@ const Services = ({ onRequestCallback }) => {
       price: "300 per seat",
       originalPrice: 400
     }
-
   ];
 
   const videoList = [
@@ -109,25 +104,33 @@ const Services = ({ onRequestCallback }) => {
   return (
     <div id="services" className="font-sans">
       
-      {/* --- Info Section --- */}
-      <section className="py-20 px-4 bg-white">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">Dry Cleaning at its best</h2>
-            <p className="text-slate-600 leading-relaxed mb-6 text-lg">
+      {/* Info Section - Mobile Optimized */}
+      <section className="py-12 md:py-20 px-4 bg-white">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-16 items-center">
+          
+          {/* Text Content */}
+          <div className="order-2 md:order-1">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-4 md:mb-6">
+              Dry Cleaning at its best
+            </h2>
+            <p className="text-slate-600 leading-relaxed mb-6 text-base md:text-lg">
               Preserving the quality of your expensive garments requires expert care. <strong>Kavya Dry Cleaners</strong> provides premium dry cleaning and fabric restoration services to keep your clothes looking new.
             </p>
-            <div className="grid grid-cols-2 gap-6">
+            
+            {/* Features Grid - 2 columns on mobile, responsive */}
+            <div className="grid grid-cols-2 gap-3 md:gap-6">
               {["Stain Removal", "Premium Packaging", "Express Delivery", "Fabric Protection"].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 text-slate-800 font-medium">
-                  <CheckCircle className="text-green-500" size={20} /> {item}
+                <div key={i} className="flex items-center gap-2 text-slate-800 font-medium text-sm md:text-base">
+                  <CheckCircle className="text-green-500 flex-shrink-0" size={18} /> 
+                  <span className="leading-tight">{item}</span>
                 </div>
               ))}
             </div>
           </div>
           
-          <div className="relative">
-             <div className="w-full h-96 bg-slate-200 rounded-tr-[80px] rounded-bl-[80px] overflow-hidden shadow-lg border-4 border-white relative">
+          {/* Image Carousel */}
+          <div className="relative order-1 md:order-2">
+             <div className="w-full h-64 sm:h-80 md:h-96 bg-slate-200 rounded-2xl md:rounded-tr-[80px] md:rounded-bl-[80px] overflow-hidden shadow-lg border-2 md:border-4 border-white relative">
                 {shopImages.map((img, index) => (
                   <img 
                     key={index}
@@ -143,63 +146,24 @@ const Services = ({ onRequestCallback }) => {
         </div>
       </section>
 
-      {/* --- Alternating Showcase --- */}
-      <section className="py-20 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 space-y-24">
+      {/* Service Cards - Mobile-First Design */}
+      <section className="py-12 md:py-20 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 space-y-12 md:space-y-24">
           {serviceList.map((service, idx) => {
             const isReverse = idx % 2 !== 0;
             return (
               <div 
                 key={idx} 
-                className={`flex flex-col md:flex-row items-center gap-12 ${isReverse ? 'md:flex-row-reverse' : ''}`}
+                className={`flex flex-col md:flex-row items-stretch gap-6 md:gap-12 ${isReverse ? 'md:flex-row-reverse' : ''}`}
               >
-                {/* Text Side */}
-                <div className="flex-1 text-left">
-                  <h3 className="text-3xl font-bold text-slate-900 mb-2">
-                    {service.title} <span className="text-blue-600">Dry-Clean</span>
-                  </h3>
-                  
-                  {/* --- PRICE TAG UI --- */}
-                  <div className="flex items-center gap-3 mb-4">
-                     {/* Original Price */}
-                     <span className="text-slate-400 text-lg line-through decoration-red-400 decoration-2">
-                       ₹{service.originalPrice}
-                     </span>
-                     
-                     {/* Current Price */}
-                     <span className="text-3xl font-extrabold text-blue-700">
-                       ₹{service.price}
-                     </span>
-                     
-                     <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
-                        Best Price
-                     </span>
-                  </div>
-
-                  <div className="w-16 h-1 bg-orange-500 mb-6"></div>
-                  <p className="text-slate-600 text-lg mb-8 leading-relaxed">
-                    {service.desc}
-                  </p>
-                  
-                  <div className="flex items-center gap-6">
-                    <button onClick={onRequestCallback} className="bg-orange-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-200 transition-all active:scale-95">
-                      Request Call Back
-                    </button>
-                    <div className="text-sm font-bold text-slate-400">
-                      <span className="block text-slate-500 text-xs uppercase tracking-wider">Est. Time</span>
-                      {service.deliveryTime}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Image Side */}
-                <div className="flex-1 w-full relative group">
-                   <div className={`bg-white p-3 rounded-3xl shadow-xl transition-transform duration-500 hover:scale-[1.02] ${isReverse ? '-rotate-1 hover:rotate-0' : 'rotate-1 hover:rotate-0'}`}>
-                      <div className="bg-slate-200 rounded-2xl h-80 w-full flex items-center justify-center text-slate-400 text-xl font-bold overflow-hidden relative">
+                {/* Image Card - Full width on mobile */}
+                <div className="w-full md:flex-1 relative group">
+                   <div className={`bg-white p-2 md:p-3 rounded-2xl md:rounded-3xl shadow-lg transition-all duration-500 hover:shadow-2xl ${isReverse ? 'md:-rotate-1 hover:rotate-0' : 'md:rotate-1 hover:rotate-0'}`}>
+                      <div className="bg-slate-200 rounded-xl md:rounded-2xl h-56 sm:h-64 md:h-80 w-full flex items-center justify-center text-slate-400 text-xl font-bold overflow-hidden relative">
                          <img 
                            src={service.image} 
                            alt={service.title} 
-                           className="w-full h-full object-cover rounded-2xl"
+                           className="w-full h-full object-cover rounded-xl md:rounded-2xl"
                            onError={(e) => {
                              e.target.style.display = 'none'; 
                              e.target.parentElement.innerText = service.imgLabel; 
@@ -208,8 +172,8 @@ const Services = ({ onRequestCallback }) => {
                       </div>
                    </div>
                    
-                   {/* Smart Discount Badge: Handles Ranges vs Numbers */}
-                   <div className={`absolute top-8 ${isReverse ? 'right-8' : 'left-8'} bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10 flex items-center gap-1`}>
+                   {/* Discount Badge */}
+                   <div className={`absolute top-4 md:top-8 ${isReverse ? 'md:right-8 right-4' : 'md:left-8 left-4'} bg-red-500 text-white text-xs font-bold px-2.5 py-1.5 md:px-3 md:py-1 rounded-full shadow-lg z-10 flex items-center gap-1`}>
                       <Tag size={12} /> 
                       {typeof service.price === 'number' 
                         ? `SAVE ₹${service.originalPrice - service.price}` 
@@ -217,42 +181,89 @@ const Services = ({ onRequestCallback }) => {
                       }
                    </div>
                 </div>
+
+                {/* Text Content - Full width on mobile */}
+                <div className="w-full md:flex-1 flex flex-col justify-center">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+                    {service.title} <span className="text-blue-600">Dry-Clean</span>
+                  </h3>
+                  
+                  {/* Price Section - Responsive */}
+                  <div className="flex items-center gap-2 md:gap-3 mb-4 flex-wrap">
+                     <span className="text-slate-400 text-base md:text-lg line-through decoration-red-400 decoration-2">
+                       ₹{service.originalPrice}
+                     </span>
+                     
+                     <span className="text-2xl md:text-3xl font-extrabold text-blue-700">
+                       ₹{service.price}
+                     </span>
+                     
+                     <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+                        Best Price
+                     </span>
+                  </div>
+
+                  <div className="w-12 md:w-16 h-1 bg-orange-500 mb-4 md:mb-6"></div>
+                  
+                  <p className="text-slate-600 text-sm sm:text-base md:text-lg mb-6 md:mb-8 leading-relaxed">
+                    {service.desc}
+                  </p>
+                  
+                  {/* CTA Section - Stacked on mobile */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-6">
+                    <button 
+                      onClick={onRequestCallback} 
+                      className="bg-orange-500 text-white px-6 md:px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-200 transition-all active:scale-95 text-sm md:text-base w-full sm:w-auto"
+                    >
+                      Request Call Back
+                    </button>
+                    
+                    <div className="flex items-center gap-2 text-xs md:text-sm font-bold text-slate-400 bg-slate-100 px-4 py-3 rounded-lg sm:bg-transparent sm:px-0">
+                      <Clock size={16} className="text-blue-500" />
+                      <div>
+                        <span className="block text-slate-500 text-[10px] md:text-xs uppercase tracking-wider">Est. Time</span>
+                        <span className="text-slate-700">{service.deliveryTime}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             );
           })}
         </div>
       </section>
 
-      {/* --- Videos Section --- */}
-      <section className="py-20 bg-white">
+      {/* Videos Section - Mobile Grid */}
+      <section className="py-12 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-           <div className="text-center mb-12">
-             <h2 className="text-3xl font-bold text-slate-900">Our Process in Action</h2>
-             <p className="text-slate-500 mt-2">Watch our shop opening and cleaning process</p>
+           <div className="text-center mb-8 md:mb-12">
+             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Our Process in Action</h2>
+             <p className="text-slate-500 mt-2 text-sm md:text-base">Watch our shop opening and cleaning process</p>
            </div>
            
-           <div className="grid md:grid-cols-4 gap-6">
+           {/* Responsive Grid: 2 cols mobile, 4 cols desktop */}
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
               {videoList.map((video, index) => (
                 <div 
                   key={index} 
                   onClick={() => setPlayingVideo(video.id)}
-                  className="aspect-video bg-slate-100 rounded-2xl flex items-center justify-center relative overflow-hidden group cursor-pointer hover:shadow-xl transition-all border border-slate-200"
+                  className="aspect-video bg-slate-100 rounded-xl md:rounded-2xl flex items-center justify-center relative overflow-hidden group cursor-pointer hover:shadow-xl transition-all border border-slate-200"
                 >
                    {video.thumbnail ? (
                      <img src={video.thumbnail} alt={video.title} className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                    ) : (
-                     <div className="absolute inset-0 bg-slate-200 flex items-center justify-center">
-                        <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">{video.title}</span>
+                     <div className="absolute inset-0 bg-slate-200 flex items-center justify-center p-2">
+                        <span className="text-slate-400 font-bold text-[10px] sm:text-xs uppercase tracking-widest text-center">{video.title}</span>
                      </div>
                    )}
 
-                   <div className="w-14 h-14 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform z-10">
-                      <Play size={24} fill="#2563EB" className="text-blue-600 ml-1" />
+                   <div className="w-10 h-10 md:w-14 md:h-14 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform z-10">
+                      <Play size={18} className="md:w-6 md:h-6" fill="#2563EB" />
                    </div>
                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
                    
-                   <div className="absolute bottom-3 left-3 right-3">
-                      <span className="bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded truncate block text-center backdrop-blur-md">
+                   <div className="absolute bottom-2 left-2 right-2">
+                      <span className="bg-black/70 text-white text-[9px] md:text-[10px] font-bold px-2 py-1 rounded truncate block text-center backdrop-blur-md">
                         {video.title}
                       </span>
                    </div>
@@ -262,15 +273,18 @@ const Services = ({ onRequestCallback }) => {
         </div>
       </section>
 
-      {/* --- Video Modal --- */}
+      {/* Video Modal - Mobile Optimized */}
       {playingVideo && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPlayingVideo(null)}>
-          <div className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-2 md:p-4" onClick={() => setPlayingVideo(null)}>
+          <div className="relative w-full max-w-4xl aspect-video bg-black rounded-xl md:rounded-2xl overflow-hidden shadow-2xl">
              <button 
-               className="absolute top-4 right-4 text-white hover:text-red-500 z-10 bg-black/50 rounded-full p-2 transition-colors"
-               onClick={() => setPlayingVideo(null)}
+               className="absolute top-2 right-2 md:top-4 md:right-4 text-white hover:text-red-500 z-10 bg-black/50 rounded-full p-1.5 md:p-2 transition-colors"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 setPlayingVideo(null);
+               }}
              >
-               <X size={32} />
+               <X size={24} className="md:w-8 md:h-8" />
              </button>
              
              <iframe 
