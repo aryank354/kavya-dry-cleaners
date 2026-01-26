@@ -96,7 +96,7 @@ const Footer = ({ onRequestCallback }) => {
               href="https://wa.me/919899320667" 
               target="_blank"
               rel="noreferrer"
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 md:py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg text-sm md:text-base"
+              className="w-full bg-blue-500 hover:bg-blue-700 text-white py-3 md:py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg text-sm md:text-base"
             >
               💬 WhatsApp Us
             </a>
