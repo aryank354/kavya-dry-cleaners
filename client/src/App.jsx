@@ -8,7 +8,15 @@ const BASE_URL = import.meta.env.PROD
   ? "https://kavya-dry-cleaners.onrender.com" 
   : "http://localhost:5000";
 
-const categories = ['All', 'Men', 'Women', 'Household', 'Winter', 'Others'];
+const categories = [
+  'All',
+  'Gents Wear',
+  'Ladies Wear',
+  'Winter & Jackets',
+  'Steam Press',
+  'Household',
+  'Others'
+];
 
 const features = [
   { icon: Sparkles, title: "Premium Quality", desc: "Expert fabric care" },
