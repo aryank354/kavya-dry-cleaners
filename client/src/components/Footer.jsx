@@ -98,7 +98,7 @@ const Footer = ({ onRequestCallback }) => {
               rel="noreferrer"
               className="w-full bg-blue-500 hover:bg-blue-700 text-white py-3 md:py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg text-sm md:text-base"
             >
-              💬 WhatsApp Us
+              Phone
             </a>
           </div>
 
