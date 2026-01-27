@@ -1,4 +1,4 @@
-import { MapPin, Phone, Clock, Mail, Facebook, Instagram, Twitter } from 'lucide-react';
+import { MapPin, Phone, Clock, Mail, Facebook, Instagram, Twitter, MessageCircle } from 'lucide-react';
 
 const Footer = ({ onRequestCallback }) => {
   return (
@@ -8,7 +8,7 @@ const Footer = ({ onRequestCallback }) => {
       <div className="max-w-7xl mx-auto px-4 py-10 md:py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-8 text-sm">
           
-          {/* Brand Info - Full width on mobile */}
+          {/* Brand Info */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <svg viewBox="0 0 100 100" className="w-10 h-10" fill="none">
@@ -20,11 +20,13 @@ const Footer = ({ onRequestCallback }) => {
               </svg>
               <h4 className="text-lg md:text-xl font-bold">Kavya Dry Cleaners</h4>
             </div>
+            
             <p className="text-slate-400 leading-relaxed mb-4">
-              Premium care for your premium clothes since 2001. Trusted by thousands in New Delhi.
+              Premium care for your premium clothes since 2001. Trusted by thousands in New Delhi.<br/>
+              <strong className="text-slate-200 block mt-2">Proprietor: Mr. Amar Nath Kanojia</strong>
             </p>
             
-            {/* Social Links - Mobile Friendly */}
+            {/* Social Links */}
             <div className="flex gap-3 mt-4">
               <a href="#" className="bg-blue-600 hover:bg-blue-700 p-2 rounded-full transition-colors" aria-label="Facebook">
                 <Facebook size={18} />
@@ -63,7 +65,7 @@ const Footer = ({ onRequestCallback }) => {
             </ul>
           </div>
 
-          {/* Contact Info - Enhanced */}
+          {/* Contact Info */}
           <div>
             <h4 className="font-bold mb-4 text-base md:text-lg border-b border-slate-700 pb-2">Contact Us</h4>
             <ul className="space-y-3 text-slate-400">
@@ -71,10 +73,19 @@ const Footer = ({ onRequestCallback }) => {
                 <MapPin size={16} className="mt-1 text-orange-500 flex-shrink-0" />
                 <span className="leading-relaxed">D-313, Tagore Garden Extn<br/>New Delhi - 110027</span>
               </li>
+              
               <li className="flex items-center gap-2">
                 <Phone size={16} className="text-orange-500 flex-shrink-0" />
                 <a href="tel:9899320667" className="hover:text-white transition-colors">9899320667</a>
               </li>
+
+              <li className="flex items-center gap-2">
+                <Mail size={16} className="text-orange-500 flex-shrink-0" />
+                <a href="mailto:kavyadrycleaners@gmail.com" className="hover:text-white transition-colors break-all">
+                  kavyadrycleaners@gmail.com
+                </a>
+              </li>
+
               <li className="flex items-start gap-2">
                 <Clock size={16} className="mt-1 text-orange-500 flex-shrink-0" />
                 <span>Mon-Sat: 9:00 AM - 8:00 PM<br/>Sunday: Closed</span>
@@ -82,30 +93,51 @@ const Footer = ({ onRequestCallback }) => {
             </ul>
           </div>
 
-          {/* CTA Section */}
+          {/* Buttons Section (Revised Design) */}
           <div>
             <h4 className="font-bold mb-4 text-base md:text-lg border-b border-slate-700 pb-2">Get in Touch</h4>
-            <button 
-              onClick={onRequestCallback} 
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 md:py-3.5 rounded-xl font-bold mb-4 transition-all active:scale-95 shadow-lg shadow-orange-900/20 text-sm md:text-base"
-            >
-              Request Call Back
-            </button>
             
-            <a 
-              href="https://wa.me/919899320667" 
-              target="_blank"
-              rel="noreferrer"
-              className="w-full bg-blue-500 hover:bg-blue-700 text-white py-3 md:py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg text-sm md:text-base"
-            >
-              Phone
-            </a>
+            {/* Action Buttons Grid - Compact & Sleek */}
+            <div className="grid grid-cols-3 gap-3">
+              <a 
+                href="https://wa.me/919899320667" 
+                target="_blank"
+                rel="noreferrer"
+                className="bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2.5 rounded-lg flex flex-col items-center justify-center transition-all active:scale-95 shadow-md group border border-green-400/30"
+                title="Chat on WhatsApp"
+              >
+                <MessageCircle size={20} className="mb-1 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-semibold tracking-wide">Chat</span>
+              </a>
+
+              <a 
+                href="tel:9899320667" 
+                className="bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2.5 rounded-lg flex flex-col items-center justify-center transition-all active:scale-95 shadow-md group border border-blue-400/30"
+                title="Call Now"
+              >
+                <Phone size={20} className="mb-1 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-semibold tracking-wide">Call</span>
+              </a>
+
+              <a 
+                href="mailto:kavyadrycleaners@gmail.com" 
+                className="bg-gradient-to-b from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white py-2.5 rounded-lg flex flex-col items-center justify-center transition-all active:scale-95 shadow-md group border border-slate-500/30"
+                title="Send Email"
+              >
+                <Mail size={20} className="mb-1 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-semibold tracking-wide">Email</span>
+              </a>
+            </div>
+            
+            <p className="text-[10px] text-slate-500 text-center mt-3">
+              Fast response • Within 24hrs
+            </p>
           </div>
 
         </div>
       </div>
 
-      {/* Bottom Bar - Mobile Optimized */}
+      {/* Bottom Bar */}
       <div className="border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 py-4 md:py-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-xs md:text-sm text-slate-500">
