@@ -21,14 +21,15 @@ const Services = ({ onRequestCallback }) => {
 
   const serviceList = [
     { 
-      title: "Ornamental Dress", 
-      desc: "Ornamental and ethnic dresses look gorgeous, but with delicate intricacies of design on the fabric, these beautiful garments are not suitable for hand or machine wash.", 
-      image: "/dress.jpg",      
-      imgLabel: "Dress",
-      deliveryTime: "3-5 Days",
-      price: "700 - 1000",
-      originalPrice: 1200
+      title: "Shirt", 
+      desc: "Crisp steam pressing and premium dry cleaning for your daily office wear. Get wrinkle-free, fresh clothes every time.", 
+      image: "/shirt.jpg", 
+      imgLabel: "Shirt/Pant",
+      deliveryTime: "2 Days",
+      price: 80,          
+      originalPrice: 120   
     },
+
     { 
       title: "Saree + Blouse", 
       desc: "Indian women have a special love for their sarees. Cleaning this extended piece of elegant cloth might not be that easy. To maintain quality and color, dry-cleaning is the best option.", 
@@ -38,33 +39,7 @@ const Services = ({ onRequestCallback }) => {
       price: 250,          
       originalPrice: 300   
     },
-    { 
-      title: "Gent Suit (3pc)", 
-      desc: "Suit is a formal dress that adds style and class to your personality. Indeed these costly items deserve the quality care of professional Dry-Cleaning.", 
-      image: "/suit.jpg",       
-      imgLabel: "Suit",
-      deliveryTime: "2-3 Days",
-      price: 400,          
-      originalPrice: 500   
-    },
-    { 
-      title: "Sherwani (3pc)", 
-      desc: "Royal care for your royal attire. We specialize in cleaning heavy embroidery, velvet, and silk sherwanis without damaging the fabric.", 
-      image: "/sherwani.jpg", 
-      imgLabel: "Sherwani",
-      deliveryTime: "4-5 Days",
-      price: 360,
-      originalPrice: 600
-    },
-    { 
-      title: "Shirt", 
-      desc: "Crisp steam pressing and premium dry cleaning for your daily office wear. Get wrinkle-free, fresh clothes every time.", 
-      image: "/shirt.jpg", 
-      imgLabel: "Shirt/Pant",
-      deliveryTime: "2 Days",
-      price: 80,          
-      originalPrice: 120   
-    },
+
     { 
       title: "Jacket", 
       desc: "Professional cleaning for winter wear including leather jackets and hoodies. We remove odors and lint while maintaining warmth.", 
@@ -84,6 +59,24 @@ const Services = ({ onRequestCallback }) => {
       originalPrice: 400
     },
     { 
+      title: "Sherwani (3pc)", 
+      desc: "Royal care for your royal attire. We specialize in cleaning heavy embroidery, velvet, and silk sherwanis without damaging the fabric.", 
+      image: "/sherwani.jpg", 
+      imgLabel: "Sherwani",
+      deliveryTime: "4-5 Days",
+      price: 360,
+      originalPrice: 600
+    },
+    { 
+      title: "Gent Suit (3pc)", 
+      desc: "Suit is a formal dress that adds style and class to your personality. Indeed these costly items deserve the quality care of professional Dry-Cleaning.", 
+      image: "/suit.jpg",       
+      imgLabel: "Suit",
+      deliveryTime: "2-3 Days",
+      price: 400,          
+      originalPrice: 500   
+    },
+    { 
       title: "Sofa", 
       desc: "Complete home hygiene! Deep cleaning for sofas to remove dust, allergens, and tough stains.", 
       image: "/sofa.jpg", 
@@ -91,6 +84,15 @@ const Services = ({ onRequestCallback }) => {
       deliveryTime: "3-5 Days",
       price: "300 per seat",
       originalPrice: 400
+    },
+    { 
+      title: "Ornamental Dress", 
+      desc: "Ornamental and ethnic dresses look gorgeous, but with delicate intricacies of design on the fabric, these beautiful garments are not suitable for hand or machine wash.", 
+      image: "/dress.jpg",      
+      imgLabel: "Dress",
+      deliveryTime: "3-5 Days",
+      price: "700 - 1000",
+      originalPrice: 1200
     }
   ];
 
