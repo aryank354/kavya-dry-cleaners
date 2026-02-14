@@ -88,7 +88,7 @@ const Footer = ({ onRequestCallback }) => {
 
               <li className="flex items-start gap-2">
                 <Clock size={16} className="mt-1 text-orange-500 flex-shrink-0" />
-                <span>Mon-Sat: 9:00 AM - 8:00 PM<br/>Wednesday: Closed</span>
+                <span>Mon-Sat: 10:30 AM - 8:30 PM<br/>Wednesday: Closed</span>
               </li>
             </ul>
           </div>
