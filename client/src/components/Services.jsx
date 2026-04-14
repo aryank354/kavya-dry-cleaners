@@ -290,7 +290,7 @@ const Services = ({ onRequestCallback }) => {
              </button>
              
              <iframe 
-               src={`https://www.youtube.com/embed/${playingVideo}?autoplay=1`} 
+               src={`https://www.youtube.com/embed/${playingVideo}?autoplay=1&vq=hd1080&rel=0`} 
                title="YouTube video player" 
                className="w-full h-full"
                frameBorder="0" 
