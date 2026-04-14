@@ -98,9 +98,9 @@ const Services = ({ onRequestCallback }) => {
 
   const videoList = [
     { id: "cxPsRHDNCLg", title: "Grand Shop Opening", thumbnail: "/thumbnail.png" },
-    { id: "2", title: "Premium Packaging" },
-    { id: "3", title: "Stain Removal Process" },
-    { id: "4", title: "Steam Pressing" }
+    { id: "Fyl-RWjRtfA", title: "Shop Tour & Blanket Cleaning", thumbnail: "https://img.youtube.com/vi/Fyl-RWjRtfA/hqdefault.jpg" },
+    { id: "fD5xb3rMDbs", title: "Dry Clean Ready Clothes", thumbnail: "https://img.youtube.com/vi/fD5xb3rMDbs/hqdefault.jpg" },
+    { id: "nXsJIhXaTME", title: "Quick Cleaning Process", thumbnail: "https://img.youtube.com/vi/nXsJIhXaTME/hqdefault.jpg" },
   ];
 
   return (
