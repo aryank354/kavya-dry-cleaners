@@ -145,7 +145,7 @@ const Footer = ({ onRequestCallback }) => {
               © 2026 Kavya Dry Cleaners. All rights reserved.
             </p>
             <p className="text-center sm:text-right">
-              Developed by <a href="https://www.aryankanojia.live/" className="hover:text-slate-300 underline decoration-slate-700 transition-colors" target="_blank" rel="noreferrer">Aryan Kanojia</a>
+              Developed by <a href="https://aryankanojia.vercel.app/" className="hover:text-slate-300 underline decoration-slate-700 transition-colors" target="_blank" rel="noreferrer">Aryan Kanojia</a>
             </p>
           </div>
         </div>
